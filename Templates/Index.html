@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grid & GridFlex Calculator</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #e8ecf1;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .input-section, .result-section {
+            flex: 1;
+            min-width: 300px;
+            background-color: #f0f4f7;
+            padding: 15px;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+        }
+        .input-section h2, .result-section h2 {
+            margin-top: 0;
+            font-size: 1.5em;
+            color: #2c3e50;
+        }
+        form label {
+            display: inline-block;
+            width: 120px;
+            margin: 5px 0;
+        }
+        form input, form select {
+            padding: 5px;
+            margin: 5px 0;
+            width: 150px;
+        }
+        form button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .result-text {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #fff9e6;
+            padding: 10px;
+            border: 1px solid #ccc;
+            white-space: pre-wrap;
+            min-height: 200px;
+        }
+        .plot-container {
+            width: 100%;
+            height: 400px;
+        }
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .plot-container {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center; color: #2c3e50;">Grid & GridFlex Calculator</h1>
+    <div class="container">
+        <div class="input-section">
+            <h2>Input Parameters</h2>
+            <form id="calcForm">
+                <label for="box_w">Box Width (mm):</label>
+                <input type="number" id="box_w" name="box_w" step="any" required><br>
+                <label for="box_h">Box Height (mm):</label>
+                <input type="number" id="box_h" name="box_h" step="any" required><br>
+                <label for="psu_wattage">PSU Wattage (W):</label>
+                <input type="number" id="psu_wattage" name="psu_wattage" step="any"><br>
+                <label for="psu_max_load">PSU Max Load (%):</label>
+                <input type="number" id="psu_max_load" name="psu_max_load" value="80" step="any"><br>
+                <label for="panel_type">Panel Type:</label>
+                <select id="panel_type" name="panel_type">
+                    <option value="Grid v5">Grid v5</option>
+                    <option value="GRID v4">Grid v4</option>
+                    <option value="GridFlex">GridFlex</option>
+                    <option value="GridFlex DW">GridFlex DW</option>
+                    <option value="GridFlex RGBW">GridFlex RGBW</option>
+                </select><br>
+                <button type="submit">Calculate</button>
+            </form>
+        </div>
+        <div class="result-section">
+            <h2>Layout 1 (Portrait)</h2>
+            <div class="result-text" id="result1"></div>
+            <div class="plot-container" id="plot1"></div>
+        </div>
+        <div class="result-section">
+            <h2>Layout 2 (Landscape)</h2>
+            <div class="result-text" id="result2"></div>
+            <div class="plot-container" id="plot2"></div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('calcForm');
+        const result1 = document.getElementById('result1');
+        const result2 = document.getElementById('result2');
+        const plot1 = document.getElementById('plot1');
+        const plot2 = document.getElementById('plot2');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(form);
+            try {
+                const response = await fetch('/calculate', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                if (data.error) {
+                    result1.textContent = 'Error: ' + data.error;
+                    result2.textContent = '';
+                    Plotly.newPlot(plot1, [], {});
+                    Plotly.newPlot(plot2, [], {});
+                    return;
+                }
+                result1.textContent = data.layout1.text;
+                result2.textContent = data.layout2.text;
+                Plotly.newPlot(plot1, [], data.layout1.plot, { responsive: true });
+                Plotly.newPlot(plot2, [], data.layout2.plot, { responsive: true });
+            } catch (error) {
+                result1.textContent = 'Error: ' + error.message;
+                result2.textContent = '';
+                Plotly.newPlot(plot1, [], {});
+                Plotly.newPlot(plot2, [], {});
+            }
+        });
+    </script>
+</body>
+</html>
